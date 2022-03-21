@@ -7,8 +7,8 @@ def get_features(token, sel_tracks):
     features_uri = "https://api.spotify.com/v1/audio-features"
 
     ids = ""
-    for artist_id in sel_tracks['id']:
-        split_data = artist_id.split(",")
+    for track_id in sel_tracks['id']:
+        split_data = track_id.split(",")
 
         for _ in split_data:
             ids += "{},".format(_)
@@ -26,8 +26,8 @@ def get_features(token, sel_tracks):
 
     result = res.json()
 
-    target_cols = ['id', 'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness',
-                   'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'duration_ms', 'time_signature']
+    target_cols = ['id', 'danceability', 'energy', 'key', 'loudness', 'speechiness',
+                   'acousticness', 'instrumentalness', 'liveness', 'valence', 'tempo', 'duration_ms']
 
     features = pd.DataFrame(result['audio_features'])[target_cols]
 
