@@ -1,42 +1,50 @@
 import pandas as pd
 import requests as req
 from urllib.parse import urlencode
+import math as mt
 
 
 def get_genres(token, sel_tracks):
     artists_uri = "https://api.spotify.com/v1/artists"
 
-    ids = ""
+    cnt = mt.floor((len(sel_tracks) - 1) / 50) + 1
+    genres = pd.DataFrame(columns=['count'])
+
+    _ids = ""
     for artist_id in sel_tracks['artists']:
         split_data = artist_id.split(",")
 
         for _ in split_data:
-            ids += "{},".format(_)
+            _ids += "{},".format(_)
 
-    ids = ids[:-1]
+    _ids = _ids[:-1].split(",")
 
-    query = urlencode({
-        "ids": ids
-    })
-    headers = {
-        "authorization": "Bearer {}".format(token['access_token'])
-    }
+    for _cnt in range(0, cnt):
+        ids = ""
+        for artist_id in _ids[_cnt * 50: (_cnt + 1) * 50]:
+            ids += "{},".format(artist_id)
 
-    res = req.get("{}?{}".format(artists_uri, query), headers=headers)
+        ids = ids[:-1]
+        query = urlencode({
+            "ids": ids
+        })
+        headers = {
+            "authorization": "Bearer {}".format(token['access_token'])
+        }
 
-    result = res.json()
+        res = req.get("{}?{}".format(artists_uri, query), headers=headers)
 
-    artists = result['artists']
-    genres = pd.DataFrame(columns=['count'])
+        result = res.json()
+        artists = result['artists']
 
-    for artist in artists:
-        _genres = artist['genres']
+        for artist in artists:
+            _genres = artist['genres']
 
-        for genre in _genres:
-            if genre in genres.index:
-                genres.loc[genre]['count'] += 1
-            else:
-                genres.loc[genre] = 1
+            for genre in _genres:
+                if genre in genres.index:
+                    genres.loc[genre]['count'] += 1
+                else:
+                    genres.loc[genre] = 1
 
     get_available_genres_uri = "https://api.spotify.com/v1/recommendations/available-genre-seeds"
     res = req.get(get_available_genres_uri, headers=headers)

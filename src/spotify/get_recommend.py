@@ -103,8 +103,10 @@ def get_recommend(sel_tracks, features, genres, token):
     reco_tracks = pd.DataFrame(_reco_tracks, columns=[
                                'id', 'name', 'artists', 'artists_name'])
 
+    # 중복제거
     except_overlap_cols = [
         _ not in sel_tracks['id'].values for _ in reco_tracks['id']]
     reco_tracks = reco_tracks[except_overlap_cols]
+    reco_tracks.drop_duplicates("id", inplace=True)
 
     return reco_tracks
