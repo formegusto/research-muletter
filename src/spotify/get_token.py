@@ -16,7 +16,8 @@ def get_token():
 
     res = req.post("https://accounts.spotify.com/api/token",
                    data={
-                       "grant_type": 'client_credentials'
+                       "grant_type": 'client_credentials',
+                       "scope": "streaming user-read-email user-modify-playback-state user-read-private"
                    },
                    headers={
                        'Authorization': authorization
