@@ -7,7 +7,7 @@ def get_genres(token, sel_tracks):
     artists_uri = "https://api.spotify.com/v1/artists"
 
     ids = ""
-    for artist_id in sel_tracks['artists id']:
+    for artist_id in sel_tracks['artists']:
         split_data = artist_id.split(",")
 
         for _ in split_data:
@@ -37,5 +37,11 @@ def get_genres(token, sel_tracks):
                 genres.loc[genre]['count'] += 1
             else:
                 genres.loc[genre] = 1
+
+    get_available_genres_uri = "https://api.spotify.com/v1/recommendations/available-genre-seeds"
+    res = req.get(get_available_genres_uri, headers=headers)
+    result = res.json()
+
+    genres = genres[[_ in result['genres'] for _ in genres.index.values]]
 
     return genres.sort_values(by=['count'], ascending=False)

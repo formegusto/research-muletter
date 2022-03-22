@@ -7,7 +7,8 @@ import pandas as pd
 
 def search_tracks(token):
     search_uri = "https://api.spotify.com/v1/search"
-    sel_tracks = pd.DataFrame(columns=['id', 'name', 'artists', 'artists id'])
+    sel_tracks = pd.DataFrame(
+        columns=['id', 'name', 'artists', 'artists_name'])
 
     while True:
         q = input("검색어를 입력해주세요.")
@@ -53,12 +54,12 @@ def search_tracks(token):
                 _result.append({
                     "id": _id,
                     "name": _name,
-                    "artists": artists,
-                    "artists id": artists_id
+                    "artists": artists_id,
+                    "artists_name": artists,
                 })
 
             for idx, _ in enumerate(_result):
-                print("\t{}.{} - {} ({})".format(idx + 1, _['artists'],
+                print("\t{}.{} - {} ({})".format(idx + 1, _['artists_name'],
                                                  _['name'], _['id']))
 
             print("{}/{}".format(limit * (offset + 1), result['total']))
