@@ -5,7 +5,7 @@ from urllib.parse import urlencode
 from functools import reduce
 
 
-def get_recommend(sel_tracks, features, genres, token):
+def get_recommend(sel_tracks, features, genres, token, og=None):
     seed_info = pd.merge(left=sel_tracks, right=features, how='inner', on='id')
 
     del seed_info['artists']
@@ -108,5 +108,9 @@ def get_recommend(sel_tracks, features, genres, token):
         _ not in sel_tracks['id'].values for _ in reco_tracks['id']]
     reco_tracks = reco_tracks[except_overlap_cols]
     reco_tracks.drop_duplicates("id", inplace=True)
+
+    if og is not None:
+        reco_tracks = reco_tracks[[
+            _ not in og['id'].values for _ in reco_tracks['id']]]
 
     return reco_tracks
