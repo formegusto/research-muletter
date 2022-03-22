@@ -20,5 +20,6 @@ def music_filtering(sel_tracks, kmeans):
                 _filtering_music = np.append(_filtering_music,
                                              cluster_in_idxes
                                              )
+                break
 
     return _filtering_music

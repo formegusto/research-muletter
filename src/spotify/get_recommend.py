@@ -72,32 +72,34 @@ def get_recommend(sel_tracks, features, genres, token, og=None):
         headers = {
             "authorization": "Bearer {}".format(token['access_token'])
         }
+        try:
+            res = req.get("{}?{}".format(reco_uri, query), headers=headers)
+            result = res.json()
 
-        res = req.get("{}?{}".format(reco_uri, query), headers=headers)
-        result = res.json()
+            _tmp = np.array([])
+            for track in result['tracks']:
+                _id = track['id']
+                _name = track['name']
 
-        _tmp = np.array([])
-        for track in result['tracks']:
-            _id = track['id']
-            _name = track['name']
+                artist_list = track['album']['artists']
+                artists = reduce(
+                    lambda acc, cur: cur[1]['name'] if cur[0] == 0 else acc +
+                    "," + cur[1]['name'],
+                    enumerate(artist_list),
+                    ""
+                )
+                artists_id = reduce(
+                    lambda acc, cur: cur[1]['id'] if cur[0] == 0 else acc +
+                    "," + cur[1]['id'],
+                    enumerate(artist_list),
+                    ""
+                )
 
-            artist_list = track['album']['artists']
-            artists = reduce(
-                lambda acc, cur: cur[1]['name'] if cur[0] == 0 else acc +
-                "," + cur[1]['name'],
-                enumerate(artist_list),
-                ""
-            )
-            artists_id = reduce(
-                lambda acc, cur: cur[1]['id'] if cur[0] == 0 else acc +
-                "," + cur[1]['id'],
-                enumerate(artist_list),
-                ""
-            )
-
-            _reco_tracks = np.append(_reco_tracks,
-                                     [_id, _name, artists_id, artists]
-                                     )
+                _reco_tracks = np.append(_reco_tracks,
+                                         [_id, _name, artists_id, artists]
+                                         )
+        except:
+            return res
 
     _reco_tracks = _reco_tracks.reshape(-1, 4)
     reco_tracks = pd.DataFrame(_reco_tracks, columns=[

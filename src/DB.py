@@ -32,6 +32,48 @@ class DB:
 
         return self.mail_box.insert_one(mail_box)
 
+    def new_mail_box_seed(self, mail_box_id, sel_tracks):
+        tracks = sel_tracks.copy()
+        tracks.rename({"id": "track_id"}, axis=1, inplace=True)
+
+        _tracks = list()
+        cols = tracks.columns
+        for track in tracks.values:
+            _track = dict()
+
+            for col_idx, _ in enumerate(track):
+                _track[cols[col_idx]] = _
+
+            _tracks.append(_track)
+
+        self.mail_box.update_one({
+            "_id": ObjectId(mail_box_id)
+        }, {
+            "$addToSet": {"tracks": {"$each": _tracks}}
+        })
+
+    def new_mail(self, box_id, reco_tracks):
+        tracks = reco_tracks.copy()
+        tracks.rename({"id": "track_id"}, axis=1, inplace=True)
+
+        _tracks = list()
+        cols = tracks.columns
+        for track in tracks.values:
+            _track = dict()
+
+            for col_idx, _ in enumerate(track):
+                _track[cols[col_idx]] = _
+
+            _tracks.append(_track)
+
+        mail = {
+            "$set": {
+                "tracks": _tracks
+            }
+        }
+
+        self.mail.update_one({"box_id": box_id}, mail)
+
     def observe_seed_zone(self, sel_features):
         features = sel_features.copy()
         features.rename({"id": "track_id"}, axis=1, inplace=True)
