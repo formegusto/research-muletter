@@ -81,14 +81,21 @@ class DB:
         _features = list()
         cols = features.columns
         for track in features.values:
+
             _track = dict()
 
             for col_idx, _ in enumerate(track):
                 _track[cols[col_idx]] = _
 
-            _features.append(_track)
+            res = self.seed_zone.find_one({
+                "track_id": _track['track_id']
+            })
 
-        self.seed_zone.insert_many(_features)
+            if res is None:
+                _features.append(_track)
+
+        if len(_features) != 0:
+            self.seed_zone.insert_many(_features)
 
     def regist_mail(self, box_id, reco_tracks):
         tracks = reco_tracks.copy()
