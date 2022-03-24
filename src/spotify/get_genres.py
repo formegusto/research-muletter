@@ -48,6 +48,8 @@ def get_genres(token, sel_tracks):
 
     get_available_genres_uri = "https://api.spotify.com/v1/recommendations/available-genre-seeds"
     res = req.get(get_available_genres_uri, headers=headers)
+
+    genres.rename({"korean pop": "k-pop"}, inplace=True)
     result = res.json()
 
     genres = genres[[_ in result['genres'] for _ in genres.index.values]]
