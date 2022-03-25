@@ -18,7 +18,12 @@ def get_genres(token, sel_tracks):
             _ids += "{},".format(_)
 
     _ids = _ids[:-1].split(",")
+    headers = {
+        "authorization": "Bearer {}".format(token['access_token'])
+    }
 
+    if cnt == 0:
+        print(sel_tracks)
     for _cnt in range(0, cnt):
         ids = ""
         for artist_id in _ids[_cnt * 50: (_cnt + 1) * 50]:
@@ -28,9 +33,6 @@ def get_genres(token, sel_tracks):
         query = urlencode({
             "ids": ids
         })
-        headers = {
-            "authorization": "Bearer {}".format(token['access_token'])
-        }
 
         res = req.get("{}?{}".format(artists_uri, query), headers=headers)
 
@@ -52,6 +54,8 @@ def get_genres(token, sel_tracks):
     genres.rename({"korean pop": "k-pop"}, inplace=True)
     result = res.json()
 
-    genres = genres[[_ in result['genres'] for _ in genres.index.values]]
+    _genres = genres[[_ in result['genres'] for _ in genres.index.values]]
+    if len(_genres) == 0:
+        print(genres)
 
-    return genres.sort_values(by=['count'], ascending=False)
+    return _genres.sort_values(by=['count'], ascending=False)[:2]

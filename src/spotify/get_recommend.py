@@ -8,10 +8,9 @@ from functools import reduce
 def get_recommend(sel_tracks, features, genres, token, og=None):
     seed_info = pd.merge(left=sel_tracks, right=features, how='inner', on='id')
 
-    del seed_info['artists']
+    del seed_info['artists_name']
     del seed_info['name']
-    seed_info.rename(columns={"artists id": "artists",
-                              "id": "tracks"}, inplace=True)
+    seed_info.rename(columns={"id": "tracks"}, inplace=True)
 
     _genres = genres.index[:5].values
     seed_genres = reduce(lambda acc, cur: acc + cur + ",", _genres, "")

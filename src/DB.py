@@ -38,6 +38,7 @@ class DB:
 
         _tracks = list()
         cols = tracks.columns
+
         for track in tracks.values:
             _track = dict()
 
