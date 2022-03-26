@@ -68,6 +68,8 @@ class KMeans:
             for idx in datas.index:
                 _pat = datas.loc[idx].values
                 # euclidean distance based
+                if _pat.ndim == 2:
+                    _pat = _pat[0]
                 _pat = np.expand_dims(_pat, axis=0)
                 cluster = euc(_pat, K_pattern).argmin()
                 clusters = np.append(clusters, cluster).astype("int")

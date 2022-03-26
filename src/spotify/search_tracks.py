@@ -54,8 +54,10 @@ def search_tracks(token):
                 _result.append({
                     "id": _id,
                     "name": _name,
-                    "artists": artists_id,
-                    "artists_name": artists,
+                    # "artists": artists_id,
+                    # "artists_name": artists,
+                    "artists": artists_id.split(",")[0],
+                    "artists_name": artists.split(",")[0],
                 })
 
             for idx, _ in enumerate(_result):

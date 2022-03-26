@@ -39,8 +39,10 @@ def direct_sel(token, id):
     _row = pd.Series({
         "id": _id,
         "name": _name,
-        "artists": artists_id,
-        "artists_name": artists
+        # "artists": artists_id,
+        # "artists_name": artists
+        "artists": artists_id.split(",")[0],
+        "artists_name": artists.split(",")[0],
     })
 
     return _row

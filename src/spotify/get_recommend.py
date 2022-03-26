@@ -6,15 +6,29 @@ from functools import reduce
 
 
 def get_recommend(sel_tracks, features, genres, token, og=None):
-    seed_info = pd.merge(left=sel_tracks, right=features, how='inner', on='id')
+    for idx, _st in sel_tracks.copy().iterrows():
+        artist_list = _st['artists'].split(",")
+
+        if len(artist_list) > 1:
+            sel_tracks.drop([idx], axis=0, inplace=True)
+            for _art in artist_list:
+                _copy_st = _st.copy()
+                _copy_st['artists'] = _art
+                sel_tracks = sel_tracks.append(
+                    _copy_st, ignore_index=True
+                )
+
+    try:
+        seed_info = pd.merge(
+            left=sel_tracks, right=features, how='inner', on='id')
+        seed_info = pd.merge(left=seed_info, right=genres,
+                             how='inner', on='artists')
+    except:
+        return sel_tracks, features
 
     del seed_info['artists_name']
     del seed_info['name']
     seed_info.rename(columns={"id": "tracks"}, inplace=True)
-
-    _genres = genres.index[:5].values
-    seed_genres = reduce(lambda acc, cur: acc + cur + ",", _genres, "")
-    seed_genres = seed_genres[:-1]
 
     # target cols 13 (except popularity)
     feature_cols = ['acousticness', 'danceability', 'energy', 'instrumentalness',
@@ -48,7 +62,7 @@ def get_recommend(sel_tracks, features, genres, token, og=None):
 
         target_cols.append(target_col)
 
-    seed_cols = ['tracks', 'artists']
+    seed_cols = ['tracks', 'artists', 'genres']
     for col in seed_cols:
         seed_col = "seed_{}".format(col)
         seed_info.rename(columns={
@@ -63,7 +77,6 @@ def get_recommend(sel_tracks, features, genres, token, og=None):
         reco_uri = "https://api.spotify.com/v1/recommendations"
 
         seed_dict = seed_info.iloc[seed_idx].to_dict()
-        seed_dict['seed_genres'] = seed_genres
         seed_dict['market'] = "KR"
         seed_dict['limit'] = 100
 
