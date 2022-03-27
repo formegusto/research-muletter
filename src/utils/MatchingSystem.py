@@ -12,6 +12,7 @@ from IPython.display import clear_output
 from src.utils import KMeans
 from src.data_processing import make_norm
 from pymongo import MongoClient as mc
+from bson import ObjectId
 
 quadrant_check = [[1, 1], [1, -1], [-1, -1], [-1, 1]]
 
@@ -59,6 +60,7 @@ def get_coord(datas):
         for idx, pt in enumerate(point):
             rad = pt[0]
             ang = rad / pi * 180
+
             dis = pt[1]
             quad = get_quadrant(ang)
             if quad == -1:
@@ -192,10 +194,27 @@ class MatchingSystem:
         self.mail_box_points = pd.DataFrame(mail_box_coord, columns=['x', 'y'],
                                             index=self.mail_box_radar.index)
 
+        for box_id, values in self.mail_box_points.iterrows():
+            x, y = values
+
+            in_dict = {
+                "x": x,
+                "y": y
+            }
+            self.mail_box.update_one({
+                "_id": ObjectId(box_id)
+            }, {
+                "$set": {
+                    "coord": in_dict
+                }
+            })
+
+        print("Mail Box Points Save Success.")
+
     def visual_coord(self):
         plt.figure(figsize=(20, 15))
-        my_palette = plt.cm.get_cmap("rainbow", len(self.mail_box_radar))
 
+        my_palette = plt.cm.get_cmap("rainbow", len(self.mail_box_radar))
         for idx, pt in enumerate(self.mail_box_coord):
             color = my_palette(idx)
             x = pt[0]
@@ -204,7 +223,8 @@ class MatchingSystem:
                         label=self.mail_box_radar.index[idx])
 
         for idx, pt in enumerate(self.max_coord):
-            plt.text(pt[0], pt[1], "{} 클러스터 성향".format(idx + 1), fontsize=20)
+            plt.text(pt[0], pt[1], "{} 클러스터 성향".format(idx + 1), fontsize=20,
+                     ha="center")
 
         plt.xticks([
             self.max_coord[:, 0].min(),
