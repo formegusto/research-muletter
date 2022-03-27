@@ -87,6 +87,7 @@ class MatchingSystem:
         self.conn = mc(mongo_uri).MuLetter
         self.seed_zone = self.conn.SeedZone
         self.mail_box = self.conn.MailBox
+        self.cluster_zone = self.conn.ClusterZone
         self.is_run = False
 
     def check(self):
@@ -99,7 +100,9 @@ class MatchingSystem:
         self.is_run = True
 
     def kmeans_run(self):
-        _seed_features = self.seed_zone.find({})
+        _seed_features = self.seed_zone.find({}, {
+            "label": 0
+        })
         seed_features = pd.DataFrame([_ for _ in _seed_features])
 
         seed_features.drop(["_id"], axis=1, inplace=True)
@@ -121,6 +124,37 @@ class MatchingSystem:
         music_label.rename({"id": "track_id"}, axis=1, inplace=True)
 
         self.music_label = music_label
+        self.cluster_zone.delete_many({})
+
+        for label, k_pat in enumerate(self.kmeans.K_pattern):
+            in_db = dict()
+
+            in_db = {
+                "label": label,
+            }
+
+            _k_pat = k_pat.tolist()
+            feature_cols = norm_features.columns[1:-1].values
+            for idx, col in enumerate(feature_cols):
+                in_db[col] = _k_pat[idx]
+
+            self.cluster_zone.insert_one(
+                in_db
+            )
+        print("Cluster Zone DB update Success.")
+
+        for _, label_info in music_label.iterrows():
+            track_id, label = label_info
+
+            self.seed_zone.update_one({
+                "track_id": track_id
+            }, {
+                "$set": {
+                    "label": label
+                }
+            })
+
+        print("Seed Zone DB update Success.")
 
     def box_matching(self):
         _label = self.kmeans.clusters
@@ -170,7 +204,7 @@ class MatchingSystem:
                         label=self.mail_box_radar.index[idx])
 
         for idx, pt in enumerate(self.max_coord):
-            plt.text(pt[0], pt[1], "{} 클러스터 성향".format(idx), fontsize=20)
+            plt.text(pt[0], pt[1], "{} 클러스터 성향".format(idx + 1), fontsize=20)
 
         plt.xticks([
             self.max_coord[:, 0].min(),
