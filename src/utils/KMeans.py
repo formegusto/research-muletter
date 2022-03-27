@@ -127,20 +127,34 @@ class KMeans:
                 break
 
     def sorting(self):
-        euc_scores = np.array([])
         k_pat = self.K_pattern
         _label = self.clusters
 
+        sort_scores = list()
         for idx in range(0, len(k_pat)):
             sel_k_pat = np.expand_dims(k_pat[idx], axis=0)
 
-            euc_scores = np.append(euc_scores,
-                                   euc(sel_k_pat, k_pat)[0].sum())
+            euc_scores = euc(sel_k_pat, k_pat)[0]
+            sort_scores.append(euc_scores.argsort())
 
-        sort_scores = euc_scores.argsort()
+        sort_labels = list()
+        while len(sort_labels) != len(k_pat):
+            while True:
+                sel_idx = ran.randrange(len(sort_scores))
+                if sel_idx not in sort_labels:
+                    break
+
+            if (len(sort_labels) + 1) == len(self.K_pattern):
+                sort_labels.append(sel_idx)
+
+            check_sort = sort_scores[sel_idx][1:]
+            for _s in check_sort:
+                if _s not in sort_labels:
+                    sort_labels.append(_s)
+                    break
+
         change_index_info = list()
-
-        for idx, _ in enumerate(sort_scores):
+        for idx, _ in enumerate(sort_labels):
             change_index_info.append({
                 "idxes": np.where(_label == _)[0],
                 "change": idx
@@ -150,6 +164,6 @@ class KMeans:
             _label[info['idxes']] = info['change']
 
         self.clusters = _label
-        self.K_pattern = k_pat[sort_scores]
+        self.K_pattern = k_pat[sort_labels]
 
         print("sorting okay")
