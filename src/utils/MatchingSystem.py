@@ -1,5 +1,6 @@
 import pandas as pd
 import math as mt
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.spines import Spine
@@ -11,6 +12,73 @@ from IPython.display import clear_output
 from src.utils import KMeans
 from src.data_processing import make_norm
 from pymongo import MongoClient as mc
+
+quadrant_check = [[1, 1], [1, -1], [-1, -1], [-1, 1]]
+
+
+def get_quadrant(angle):
+    chk_angle = [0, 90, 180, 270]
+    if angle in chk_angle:
+        return -1
+    else:
+        if angle < 90:
+            return 0
+        elif angle < 180:
+            return 1
+        elif angle < 270:
+            return 2
+        elif angle < 360:
+            return 3
+
+
+def check_guadrant(angle, point):
+    if angle == 0:
+        return [0, point[1]]
+    elif angle == 90:
+        return [point[1], 0]
+    elif angle == 180:
+        return [0, point[1] * -1]
+    elif angle == 270:
+        return [point[1] * -1, 0]
+
+
+def get_coord(datas):
+    cent_points = list()
+    r, c = datas.shape
+    angles = np.array([x/float(c)*(2*pi) for x in range(c)])
+
+    for data in datas:
+        non_zero_labels = data != 0
+
+        x = angles[non_zero_labels]
+        y = data[non_zero_labels]
+
+        point = np.array([[x[i], y[i]] for i, _ in enumerate(x)])
+        point = point.reshape(-1, 2)
+
+        for idx, pt in enumerate(point):
+            rad = pt[0]
+            ang = rad / pi * 180
+            dis = pt[1]
+            quad = get_quadrant(ang)
+            if quad == -1:
+                point[idx] = check_guadrant(ang, pt)
+            else:
+                if (ang < 90) or \
+                        (ang > 180 and ang < 270):
+                    ang = 90 - (ang % 90)
+                else:
+                    ang = ang % 90
+                rad = ang * pi / 180
+
+                quad = quadrant_check[quad]
+                x = dis * mt.cos(rad) * quad[0]  # get X
+                y = dis * mt.sin(rad) * quad[1]  # get Y
+
+                point[idx] = [x, y]
+
+        cent_points.append(point.sum(axis=0))
+    return np.array(cent_points)
 
 
 class MatchingSystem:
@@ -58,6 +126,7 @@ class MatchingSystem:
         _label = self.kmeans.clusters
         _mail_boxes = self.mail_box.find()
         mail_boxes = [_ for _ in _mail_boxes]
+        self.mail_boxes = mail_boxes
 
         mail_box_radar = pd.DataFrame(columns=set(_label))
 
@@ -75,6 +144,53 @@ class MatchingSystem:
         mail_box_radar = mail_box_radar.astype("int")
 
         self.mail_box_radar = mail_box_radar
+
+    def make_coord(self):
+        mail_box_datas = self.mail_box_radar.values
+        max_points = np.identity(len(self.mail_box_radar.columns)) * 100
+
+        mail_box_coord, max_coord = get_coord(
+            mail_box_datas), get_coord(max_points)
+
+        self.mail_box_coord = mail_box_coord
+        self.max_coord = max_coord
+
+        self.mail_box_points = pd.DataFrame(mail_box_coord, columns=['x', 'y'],
+                                            index=self.mail_box_radar.index)
+
+    def visual_coord(self):
+        plt.figure(figsize=(20, 15))
+        my_palette = plt.cm.get_cmap("rainbow", len(self.mail_box_radar))
+
+        for idx, pt in enumerate(self.mail_box_coord):
+            color = my_palette(idx)
+            x = pt[0]
+            y = pt[1]
+            plt.scatter(x, y, s=600, color=color,
+                        label=self.mail_box_radar.index[idx])
+
+        for idx, pt in enumerate(self.max_coord):
+            plt.text(pt[0], pt[1], "{} 클러스터 성향".format(idx), fontsize=20)
+
+        plt.xticks([
+            self.max_coord[:, 0].min(),
+            self.max_coord[:, 0].max()
+        ])
+        plt.yticks([
+            self.max_coord[:, 1].min(),
+            self.max_coord[:, 1].max()
+        ])
+
+        plt.axhline(
+            0, color='black'
+        )
+        plt.axvline(
+            0, color='black'
+        )
+        plt.axis("off")
+        # plt.legend()
+
+        plt.show()
 
     def visual_radar_step(self):
         # 따로 그리기
