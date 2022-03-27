@@ -13,7 +13,7 @@ def visual_norm_data(sel_tracks, norm_features):
     plt.figure(figsize=(16, 8))
     x_ticks_labels = norm_features.columns.difference(['id']).values
 
-    if ~is_general:
+    if is_general:
         for _idx in range(len(norm_features)):
             feature = norm_features.iloc[_idx]
 

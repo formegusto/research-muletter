@@ -125,3 +125,31 @@ class KMeans:
                 self.clusters = clusters
                 print("Clustering End.")
                 break
+
+    def sorting(self):
+        euc_scores = np.array([])
+        k_pat = self.K_pattern
+        _label = self.clusters
+
+        for idx in range(0, len(k_pat)):
+            sel_k_pat = np.expand_dims(k_pat[idx], axis=0)
+
+            euc_scores = np.append(euc_scores,
+                                   euc(sel_k_pat, k_pat)[0].sum())
+
+        sort_scores = euc_scores.argsort()
+        change_index_info = list()
+
+        for idx, _ in enumerate(sort_scores):
+            change_index_info.append({
+                "idxes": np.where(_label == _)[0],
+                "change": idx
+            })
+
+        for info in change_index_info:
+            _label[info['idxes']] = info['change']
+
+        self.clusters = _label
+        self.K_pattern = k_pat[sort_scores]
+
+        print("sorting okay")
