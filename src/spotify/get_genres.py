@@ -8,7 +8,6 @@ from functools import reduce
 def get_genres(token, sel_tracks):
     artists_uri = "https://api.spotify.com/v1/artists"
 
-    cnt = mt.floor((len(sel_tracks) - 1) / 50) + 1
     genres = list()
 
     artist_list = list()
@@ -25,6 +24,7 @@ def get_genres(token, sel_tracks):
         "authorization": "Bearer {}".format(token['access_token'])
     }
 
+    cnt = mt.floor((len(artist_list) - 1) / 50) + 1
     if cnt == 0:
         print(sel_tracks)
 

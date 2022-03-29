@@ -13,6 +13,7 @@ from src.utils import KMeans
 from src.data_processing import make_norm
 from pymongo import MongoClient as mc
 from bson import ObjectId
+from sklearn.decomposition import PCA
 
 quadrant_check = [[1, 1], [1, -1], [-1, -1], [-1, 1]]
 
@@ -109,6 +110,7 @@ class MatchingSystem:
 
         seed_features.drop(["_id"], axis=1, inplace=True)
         seed_features.rename({"track_id": "id"}, axis=1, inplace=True)
+        self.seed_features = seed_features
 
         norm_features = make_norm(seed_features)
 
@@ -116,7 +118,7 @@ class MatchingSystem:
             datas=norm_features
         )
         kmeans.run(early_stop_cnt=5)
-        kmeans.sorting()
+        kmeans.sorting_ver_2()
 
         self.norm_features = norm_features
         self.kmeans = kmeans
@@ -193,6 +195,35 @@ class MatchingSystem:
 
         self.mail_box_points = pd.DataFrame(mail_box_coord, columns=['x', 'y'],
                                             index=self.mail_box_radar.index)
+
+        for box_id, values in self.mail_box_points.iterrows():
+            x, y = values
+
+            in_dict = {
+                "x": x,
+                "y": y
+            }
+            self.mail_box.update_one({
+                "_id": ObjectId(box_id)
+            }, {
+                "$set": {
+                    "coord": in_dict
+                }
+            })
+
+        print("Mail Box Points Save Success.")
+
+    def make_coord_ver_2(self):
+        mail_box_datas = self.mail_box_radar.values
+        max_points = np.identity(len(self.mail_box_radar.columns)) * 100
+
+        pca = PCA(n_components=2)
+        fit_datas = pca.fit_transform(np.concatenate(
+            (mail_box_datas, max_points), axis=0))
+
+        self.mail_box_points = pd.DataFrame(
+            fit_datas[:len(self.mail_box_radar.columns) * -1], columns=['x', 'y'], index=self.mail_box_radar.index)
+        self.max_points = fit_datas[len(self.mail_box_radar.columns) * -1:]
 
         for box_id, values in self.mail_box_points.iterrows():
             x, y = values

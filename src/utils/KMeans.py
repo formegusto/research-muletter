@@ -3,6 +3,7 @@ import math as mt
 from sklearn.metrics.pairwise import euclidean_distances as euc
 import random as ran
 import pandas as pd
+from IPython.display import clear_output
 
 
 def tss(mean_pattern, df):
@@ -33,15 +34,20 @@ class KMeans:
         # TSS Logic
         self.tss = (euc(mean_pattern, norm_pattern) ** 2).sum()
 
-    def run(self, early_stop_cnt=3):
+    def run(self, early_stop_cnt=3, ecv_check_count=5):
+
         ecv_check = 0
         _round = 0
         _early_stop_cnt = 0
+        _ecv_check_count = 0
 
         prev_clusters = None
         K_pattern = None
         datas = self.datas.copy()
         idxes = datas.index
+        except_K = list()
+        ecv_memories = np.array([])
+        memories = list()
 
         while True:
             clusters = np.array([])
@@ -53,6 +59,9 @@ class KMeans:
 
                 while len(init_K) < self.K:
                     _K = ran.randrange(0, datas_cnt)
+                    if _K in except_K:
+                        continue
+
                     idx = idxes[int(_K)]
                     pattern = datas.loc[idx].values
 
@@ -84,6 +93,7 @@ class KMeans:
             label_info.index = idxes
 
             wss = 0
+            wss_list = np.array([])
             for label in range(0, self.K):
                 cluster_in_idxes = label_info[
                     label_info['label'] == label
@@ -93,8 +103,10 @@ class KMeans:
                     axis=0
                 )
                 pattern = datas.loc[cluster_in_idxes].values
-                wss += (euc(pattern, cluster_pat) ** 2).sum()
 
+                _wss = (euc(pattern, cluster_pat) ** 2).sum()
+                wss_list = np.append(wss_list, _wss / len(cluster_in_idxes))
+                wss += _wss
             ecv = (1 - (wss / self.tss)) * 100
 
             print("{} round : ECV {}%".format(
@@ -106,6 +118,7 @@ class KMeans:
                         _early_stop_cnt += 1
                     ecv_check = ecv
                     _round += 1
+
                     # K 조정
                     for label in range(0, self.K):
                         cluster_in_idxes = label_info[
@@ -121,22 +134,59 @@ class KMeans:
                     print("Clustering End.")
                     break
             else:
-                self.K_pattern = K_pattern
-                self.clusters = clusters
-                print("Clustering End.")
-                break
+                if ecv < 80:
+                    ecv_memories = np.append(ecv_memories, ecv)
+                    memories.append((K_pattern, clusters))
+
+                    # if _ecv_check_count == early_stop_cnt:
+                    #     self.K_pattern = K_pattern
+                    #     self.clusters = clusters
+                    #     print("Clustering End.")
+                    #     break
+                    # else:
+                    if _ecv_check_count == ecv_check_count:
+                        max_idx = ecv_memories.argmax()
+                        memory = memories[max_idx]
+                        self.K_pattern = memory[0]
+                        self.clusters = memory[1]
+
+                        print(ecv_memories)
+                        print("Clustering End. ECV {} data Select".format(
+                            ecv_memories[max_idx]))
+
+                        break
+                    else:
+                        max_idx = wss_list.argmax()
+                        except_K.append(int(init_K[max_idx]))
+
+                        _round = 0
+                        _early_stop_cnt = 0
+                        _ecv_check_count += 1
+                        clear_output(wait=True)
+                else:
+                    self.K_pattern = K_pattern
+                    self.clusters = clusters
+
+                    print("Clustering End.")
+                    break
 
     def sorting(self):
         k_pat = self.K_pattern
         _label = self.clusters
 
+        eucs = list()
         sort_scores = list()
         for idx in range(0, len(k_pat)):
             sel_k_pat = np.expand_dims(k_pat[idx], axis=0)
 
             euc_scores = euc(sel_k_pat, k_pat)[0]
             sort_scores.append(euc_scores.argsort())
+            eucs.append(euc_scores)
 
+        # return np.array(eucs), np.array(sort_scores)
+        # # print(eucs)
+
+        # # print(sort_scores)
         sort_labels = list()
         while len(sort_labels) != len(k_pat):
             while True:
@@ -165,5 +215,102 @@ class KMeans:
 
         self.clusters = _label
         self.K_pattern = k_pat[sort_labels]
+
+        print("sorting okay")
+
+    def sorting_ver_2(self):
+        k_pat = self.K_pattern
+        _label = self.clusters
+
+        eucs = list()
+        sort_scores = list()
+        for idx in range(0, len(k_pat)):
+            sel_k_pat = np.expand_dims(k_pat[idx], axis=0)
+
+            euc_scores = euc(sel_k_pat, k_pat)[0]
+            sort_scores.append(euc_scores.argsort())
+            eucs.append(euc_scores)
+
+        eucs = np.array(eucs)
+        sort_scores = np.array(sort_scores)
+
+        # 초기 셋팅 (가장 전체적으로 유사도가 높은 친구, euc를기반으로 하니까 제일 낮은 친구가 선정되어야 함)
+        sorting_labels = np.zeros(len(sort_scores)) - 1
+        sort_eucs = np.array(eucs).sum(axis=0).argsort()
+
+        top_eucs_cluster = sort_eucs[0]
+        sorting_labels[0] = top_eucs_cluster
+
+        # 초기 기반으로 가장 가까운 애들을 양쪽에 배치
+        first_idx = 1
+        last_idx = len(sort_scores) - 1
+
+        sorting_labels[first_idx] = sort_scores[top_eucs_cluster][1]
+        sorting_labels[last_idx] = sort_scores[top_eucs_cluster][2]
+
+        first_cnt = 0
+        last_cnt = 0
+
+        while True:
+            # traiding
+            entry_1_idx = int(sorting_labels[first_idx + first_cnt])
+            entry_2_idx = int(sorting_labels[last_idx - last_cnt])
+
+            entry_1 = sort_scores[entry_1_idx]
+            entry_2 = sort_scores[entry_2_idx]
+
+            entry_1_euc = eucs[entry_1_idx]
+            entry_2_euc = eucs[entry_2_idx]
+
+            entry_1_sel = np.where(
+                np.isin(entry_1, sorting_labels) == False)[0]
+            entry_2_sel = np.where(
+                np.isin(entry_2, sorting_labels) == False)[0]
+
+            entry_1_cnt = 0
+            entry_2_cnt = 0
+
+            while True:
+                _entry_1_sel = entry_1[entry_1_sel[entry_1_cnt]]
+                _entry_2_sel = entry_2[entry_2_sel[entry_2_cnt]]
+
+                if entry_1_euc[_entry_1_sel] > entry_2_euc[_entry_1_sel]:
+                    _entry_1_sel = -1
+                    entry_1_cnt += 1
+                if entry_1_euc[_entry_2_sel] < entry_2_euc[_entry_2_sel]:
+                    _entry_2_sel = -1
+                    entry_2_cnt += 1
+
+                if len(entry_1_sel) == (entry_1_cnt):
+                    _entry_1_sel = "x"
+
+                if len(entry_2_sel) == (entry_2_cnt):
+                    _entry_2_sel = "x"
+
+                if (_entry_1_sel != -1) & (_entry_2_sel != -1):
+                    break
+
+            if _entry_1_sel != "x":
+                sorting_labels[first_idx + (first_cnt + 1)] = _entry_1_sel
+                first_cnt += 1
+            if _entry_2_sel != "x":
+                sorting_labels[last_idx - (last_cnt + 1)] = _entry_2_sel
+                last_cnt += 1
+
+            if len(np.where(sorting_labels == -1)[0]) == 0:
+                break
+
+        change_index_info = list()
+        for idx, _ in enumerate(sorting_labels):
+            change_index_info.append({
+                "idxes": np.where(_label == _)[0],
+                "change": idx
+            })
+
+        for info in change_index_info:
+            _label[info['idxes']] = info['change']
+
+        self.clusters = _label
+        self.K_pattern = k_pat[sorting_labels.astype("int")]
 
         print("sorting okay")
