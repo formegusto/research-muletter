@@ -117,7 +117,8 @@ class MatchingSystem:
         kmeans = KMeans(
             datas=norm_features
         )
-        kmeans.run(early_stop_cnt=5)
+        kmeans.run(early_stop_cnt=5,
+                   ecv_check_count=20)
         kmeans.sorting_ver_2()
 
         self.norm_features = norm_features
