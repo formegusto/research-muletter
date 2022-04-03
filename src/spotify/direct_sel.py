@@ -21,8 +21,15 @@ def direct_sel(token, id):
 
     _id = item["id"]
     _name = item["name"]
+    album = item['album']
+    images = album["images"]
 
-    artist_list = item['album']['artists']
+    if len(images) == 0:
+        _image = ""
+    else:
+        _image = images[0]['url']
+
+    artist_list = album['artists']
     artists = reduce(
         lambda acc, cur: cur[1]['name'] if cur[0] == 0 else acc +
         "," + cur[1]['name'],
@@ -43,6 +50,7 @@ def direct_sel(token, id):
         # "artists_name": artists
         "artists": artists_id.split(",")[0],
         "artists_name": artists.split(",")[0],
+        "image": _image
     })
 
     return _row

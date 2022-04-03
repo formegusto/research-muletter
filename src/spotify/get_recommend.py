@@ -92,8 +92,15 @@ def get_recommend(sel_tracks, features, genres, token, og=None):
             for track in result['tracks']:
                 _id = track['id']
                 _name = track['name']
+                album = track['album']
+                images = album["images"]
 
-                artist_list = track['album']['artists']
+                if len(images) == 0:
+                    _image = ""
+                else:
+                    _image = images[0]['url']
+
+                artist_list = album['artists']
                 artists = reduce(
                     lambda acc, cur: cur[1]['name'] if cur[0] == 0 else acc +
                     "," + cur[1]['name'],
@@ -106,16 +113,16 @@ def get_recommend(sel_tracks, features, genres, token, og=None):
                     enumerate(artist_list),
                     ""
                 )
-
                 _reco_tracks = np.append(_reco_tracks,
-                                         [_id, _name, artists_id, artists]
+                                         [_id, _name, artists_id, artists, _image]
                                          )
+
         except:
             return res
 
-    _reco_tracks = _reco_tracks.reshape(-1, 4)
+    _reco_tracks = _reco_tracks.reshape(-1, 5)
     reco_tracks = pd.DataFrame(_reco_tracks, columns=[
-                               'id', 'name', 'artists', 'artists_name'])
+                               'id', 'name', 'artists', 'artists_name', 'image'])
 
     # 중복제거
     except_overlap_cols = [

@@ -8,7 +8,7 @@ import pandas as pd
 def search_tracks(token):
     search_uri = "https://api.spotify.com/v1/search"
     sel_tracks = pd.DataFrame(
-        columns=['id', 'name', 'artists', 'artists_name'])
+        columns=['id', 'name', 'artists', 'artists_name', "image"])
 
     while True:
         q = input("검색어를 입력해주세요.")
@@ -36,8 +36,15 @@ def search_tracks(token):
             for item in result['items']:
                 _id = item["id"]
                 _name = item["name"]
+                album = item['album']
+                images = album["images"]
 
-                artist_list = item['album']['artists']
+                if len(images) == 0:
+                    _image = ""
+                else:
+                    _image = images[0]['url']
+
+                artist_list = album['artists']
                 artists = reduce(
                     lambda acc, cur: cur[1]['name'] if cur[0] == 0 else acc +
                     "," + cur[1]['name'],
@@ -58,6 +65,7 @@ def search_tracks(token):
                     # "artists_name": artists,
                     "artists": artists_id.split(",")[0],
                     "artists_name": artists.split(",")[0],
+                    "image": _image
                 })
 
             for idx, _ in enumerate(_result):
