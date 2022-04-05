@@ -54,7 +54,7 @@ class DB:
         })
 
     def new_mail(self, box_id, reco_tracks):
-        tracks = reco_tracks.copy()
+        tracks = reco_tracks.sample(frac=1).copy()
         tracks.rename({"id": "track_id"}, axis=1, inplace=True)
 
         _tracks = list()

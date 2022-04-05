@@ -310,6 +310,8 @@ class KMeans:
         for info in change_index_info:
             _label[info['idxes']] = info['change']
 
+        print(sorting_labels)
+
         self.clusters = _label
         self.K_pattern = k_pat[sorting_labels.astype("int")]
 
