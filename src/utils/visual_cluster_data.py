@@ -18,7 +18,6 @@ def visual_cluster_data(sel_tracks, kmeans):
     label_info.index = kmeans.datas.index
 
     for _r in range(0, r):
-
         for _c in range(0, c):
             label = _r * 4 + _c
             if label < kmeans.K:
