@@ -119,7 +119,7 @@ class MatchingSystem:
         )
         kmeans.run(early_stop_cnt=5,
                    ecv_check_count=20)
-        kmeans.sorting_ver_2()
+        # kmeans.sorting_ver_2()
 
         self.norm_features = norm_features
         self.kmeans = kmeans
@@ -243,16 +243,23 @@ class MatchingSystem:
 
         print("Mail Box Points Save Success.")
 
-    def visual_coord(self):
+    def visual_coord(self, _id=None):
         plt.figure(figsize=(20, 15))
 
         my_palette = plt.cm.get_cmap("rainbow", len(self.mail_box_radar))
-        for idx, pt in enumerate(self.mail_box_coord):
-            color = my_palette(idx)
+
+        if _id is None:
+            for idx, pt in enumerate(self.mail_box_coord):
+                color = my_palette(idx)
+                x = pt[0]
+                y = pt[1]
+                plt.scatter(x, y, s=600, color=color,
+                            label=self.mail_box_radar.index[idx])
+        else:
+            pt = self.mail_box_points.loc[_id].values
             x = pt[0]
             y = pt[1]
-            plt.scatter(x, y, s=600, color=color,
-                        label=self.mail_box_radar.index[idx])
+            plt.scatter(x, y, s=600)
 
         for idx, pt in enumerate(self.max_coord):
             plt.text(pt[0], pt[1], "{} 클러스터 성향".format(idx + 1), fontsize=20,
@@ -282,7 +289,7 @@ class MatchingSystem:
         # 따로 그리기
         mail_box_radar = self.mail_box_radar
 
-        labels = mail_box_radar.columns
+        labels = mail_box_radar.columns + 1
         num_labels = len(labels)
 
         angles = [x/float(num_labels)*(2*pi)
@@ -338,7 +345,7 @@ class MatchingSystem:
     def visual_radar(self):
         mail_box_radar = self.mail_box_radar
 
-        labels = mail_box_radar.columns
+        labels = mail_box_radar.columns + 1
         num_labels = len(labels)
 
         angles = [x/float(num_labels)*(2*pi)
