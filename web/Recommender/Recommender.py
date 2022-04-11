@@ -1,7 +1,7 @@
 from web import DB, Spotify
 from web.KMeans import KMeans
 from web.DataPreprocessing import make_norm, music_filtering
-from web.Recommender import visual_filtering
+from web.Recommender.visual_filtering import visual_filtering
 import pandas as pd
 
 
@@ -72,3 +72,8 @@ class Recommender:
 
     def visual_filtering(self):
         visual_filtering(self)
+
+    def save(self):
+        res = self.db.save_mail(self)
+
+        print("Save Okay {}".format(res.inserted_id))

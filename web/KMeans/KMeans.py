@@ -129,6 +129,7 @@ class KMeans:
                         K_pattern[label] = pattern
                     continue
                 else:
+                    self.ecv = ecv
                     self.K_pattern = K_pattern
                     self.clusters = clusters
                     print("Clustering End.")
@@ -146,6 +147,7 @@ class KMeans:
                     # else:
                     if _ecv_check_count == ecv_check_count:
                         max_idx = ecv_memories.argmax()
+                        self.ecv = ecv_memories[max_idx]
                         memory = memories[max_idx]
                         self.K_pattern = memory[0]
                         self.clusters = memory[1]

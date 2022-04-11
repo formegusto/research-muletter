@@ -123,7 +123,7 @@ def get_reco_tracks(self, og=None):
 
     _reco_tracks = _reco_tracks.reshape(-1, 5)
     reco_tracks = pd.DataFrame(_reco_tracks, columns=[
-                               'trackId', 'name', 'artists', 'artists_name', 'image'])
+                               'trackId', 'name', 'artistIds', 'artistNames', 'image'])
 
     # 중복제거
     except_overlap_cols = [

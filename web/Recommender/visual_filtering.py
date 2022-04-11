@@ -50,4 +50,5 @@ def visual_filtering(self):
     ax_2.set_title("필터링 후")
 
     now_time = dt.datetime.now().strftime("%Y%m%dT%H%M%Sms%f")
-    plt.savefig("./visual_images/visual_{}.png".format(now_time))
+    self.visual_image = "./visual_images/visual_{}.png".format(now_time)
+    plt.savefig(self.visual_image)
