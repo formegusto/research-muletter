@@ -9,6 +9,7 @@ class DB:
         self.conn = mc(mongo_uri).TestMuLetter
         self.mail = self.conn.Mail
         self.mail_box = self.conn.MailBox
+        self.seed_zone = self.conn.SeedZone
 
     def get_mailbox(self, _obj_id):
         obj_id = ObjectId(_obj_id)
@@ -28,3 +29,15 @@ class DB:
         }
 
         return self.mail.insert_one(mail)
+
+    def save_seed_zone(self, features):
+        features = features.copy()
+
+        for _, feature in features.iterrows():
+            track_id = feature['trackId']
+            res = self.seed_zone.find_one({
+                "trackId": track_id
+            })
+
+            if res is None:
+                self.seed_zone.insert_one(feature.to_dict())

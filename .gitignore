@@ -1,6 +1,7 @@
 .ipynb_checkpoints
 
 auth.json
+env.json
 
 __pycache__
 

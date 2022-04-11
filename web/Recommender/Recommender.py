@@ -3,6 +3,8 @@ from web.KMeans import KMeans
 from web.DataPreprocessing import make_norm, music_filtering
 from web.Recommender.visual_filtering import visual_filtering
 import pandas as pd
+import json
+import requests as req
 
 
 class Recommender:
@@ -20,6 +22,9 @@ class Recommender:
         spotify = Spotify(sel_tracks)
         spotify.get_genres
         spotify.get_features()
+
+        self.db.save_seed_zone(spotify.features)
+
         spotify.get_reco_tracks
         spotify.get_features(target="reco")
 
@@ -75,5 +80,16 @@ class Recommender:
 
     def save(self):
         res = self.db.save_mail(self)
+        self.mail_id = str(res.inserted_id)
 
-        print("Save Okay {}".format(res.inserted_id))
+        print("Save Okay {}".format(self.mail_id))
+
+    def end(self):
+        with open("env.json") as json_file:
+            json_data = json.load(json_file)
+
+        be_uri = json_data["BE_URI"]
+
+        req.get("{}/alert/success/{}".format(be_uri, self.mail_id))
+
+        del self
