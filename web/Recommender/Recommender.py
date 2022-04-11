@@ -1,5 +1,6 @@
 from web import DB, Spotify
-from web.DataPreprocessing import make_norm
+from web.KMeans import KMeans
+from web.DataPreprocessing import make_norm, music_filtering
 import pandas as pd
 
 
@@ -28,3 +29,33 @@ class Recommender:
     def data_preprocessing(self):
         self.norm_features = make_norm(
             self.spotify.features, self.spotify.reco_features)
+
+    def reco_kmeans(self):
+        sel_tracks = self.spotify.sel_tracks
+        kmeans = KMeans(
+            datas=self.norm_features
+        )
+
+        kmeans.run(early_stop_cnt=5)
+        _filtering_music_list = music_filtering(sel_tracks, kmeans)
+
+        if len(_filtering_music_list) <= (100 + len(sel_tracks)):
+            return _filtering_music_list, kmeans
+        else:
+            filter_music = self.norm_features.set_index(
+                "trackId").loc[_filtering_music_list].reset_index()
+        while True:
+            kmeans = KMeans(
+                datas=filter_music
+            )
+            kmeans.run(early_stop_cnt=5)
+            _filtering_music_list = music_filtering(sel_tracks, kmeans)
+
+            if len(_filtering_music_list) <= (100 + len(sel_tracks)):
+                break
+            else:
+                filter_music = self.norm_features.set_index(
+                    "trackId").loc[_filtering_music_list].reset_index()
+
+        self.reco_musics = [_ in _filtering_music_list
+                            for _ in self.reco_tracks['trackId']]
