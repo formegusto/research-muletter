@@ -1,4 +1,5 @@
 from web import DB, Spotify
+from web.DataPreprocessing import make_norm
 import pandas as pd
 
 
@@ -23,3 +24,7 @@ class Recommender:
         self.spotify = spotify
 
         print("[ML Program] Spotify Setting Okay :)")
+
+    def data_preprocessing(self):
+        self.norm_features = make_norm(
+            self.spotify.features, self.spotify.reco_features)
