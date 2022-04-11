@@ -1,6 +1,7 @@
 from web import DB, Spotify
 from web.KMeans import KMeans
 from web.DataPreprocessing import make_norm, music_filtering
+from web.Recommender import visual_filtering
 import pandas as pd
 
 
@@ -32,6 +33,7 @@ class Recommender:
 
     def reco_kmeans(self):
         sel_tracks = self.spotify.sel_tracks
+        reco_tracks = self.spotify.reco_tracks
         kmeans = KMeans(
             datas=self.norm_features
         )
@@ -40,7 +42,11 @@ class Recommender:
         _filtering_music_list = music_filtering(sel_tracks, kmeans)
 
         if len(_filtering_music_list) <= (100 + len(sel_tracks)):
-            return _filtering_music_list, kmeans
+            self.kmeans = kmeans
+            recos = [_ in _filtering_music_list
+                     for _ in reco_tracks['trackId']]
+            self.reco_musics = reco_tracks[recos].copy()
+            return
         else:
             filter_music = self.norm_features.set_index(
                 "trackId").loc[_filtering_music_list].reset_index()
@@ -57,5 +63,12 @@ class Recommender:
                 filter_music = self.norm_features.set_index(
                     "trackId").loc[_filtering_music_list].reset_index()
 
-        self.reco_musics = [_ in _filtering_music_list
-                            for _ in self.reco_tracks['trackId']]
+        self.kmeans = kmeans
+        recos = [_ in _filtering_music_list
+                 for _ in reco_tracks['trackId']]
+        self.reco_musics = reco_tracks[recos].copy()
+
+        return
+
+    def visual_filtering(self):
+        visual_filtering(self)
