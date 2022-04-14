@@ -35,7 +35,6 @@ class KMeans:
         self.tss = (euc(mean_pattern, norm_pattern) ** 2).sum()
 
     def run(self, early_stop_cnt=3, ecv_check_count=5):
-
         ecv_check = 0
         _round = 0
         _early_stop_cnt = 0

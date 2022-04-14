@@ -1,6 +1,7 @@
 from pymongo import MongoClient as mc
 from bson import ObjectId
 import datetime as dt
+from web import SeedZoneController
 
 
 class DB:
@@ -10,6 +11,7 @@ class DB:
         self.mail = self.conn.Mail
         self.mail_box = self.conn.MailBox
         self.seed_zone = self.conn.SeedZone
+        self.seed_ctrl = SeedZoneController()
 
     def get_mailbox(self, _obj_id):
         obj_id = ObjectId(_obj_id)
@@ -41,3 +43,7 @@ class DB:
 
             if res is None:
                 self.seed_zone.insert_one(feature.to_dict())
+                self.seed_ctrl.set_label(feature)
+
+                # observe seed zone 용
+                chk_seed_zone_count = self.seed_zone.estimated_document_count()
