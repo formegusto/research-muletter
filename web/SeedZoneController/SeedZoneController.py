@@ -1,5 +1,6 @@
 from web.KMeans import KMeans
 from web.DataPreprocessing import make_norm
+from web.CoordGenerator.CoordGenerator import CoordGenerator
 
 from sklearn.metrics.pairwise import euclidean_distances as euc
 import pandas as pd
@@ -15,6 +16,7 @@ class SeedZoneController:
         self.seed_zone = self.conn.SeedZone
         self.mail_box = self.conn.MailBox
         self.cluster_zone = self.conn.ClusterZone
+        self.coord_gen = CoordGenerator()
 
     def make_new_cluster(self):
         _seed_features = self.seed_zone.find({}, {
@@ -64,6 +66,8 @@ class SeedZoneController:
                     "label": label
                 }
             })
+
+        self.coord_gen.all_remake_coords()
 
     def set_label(self, features):
         row = features.copy()
