@@ -1,7 +1,7 @@
 from pymongo import MongoClient as mc
 from bson import ObjectId
 import datetime as dt
-from web import SeedZoneController
+from web.SeedZoneController import SeedZoneController
 
 
 class DB:

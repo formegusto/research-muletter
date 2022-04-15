@@ -1,8 +1,71 @@
-from web.KMeans import KMeans
-from web.DataPreprocessing import make_norm
-import pandas as pd
-import datetime as dt
+import math as mt
+import numpy as np
 from pymongo import MongoClient as mc
+from bson import ObjectId
+
+quadrant_check = [[1, 1], [1, -1], [-1, -1], [-1, 1]]
+
+
+def get_quadrant(angle):
+    chk_angle = [0, 90, 180, 270]
+    if angle in chk_angle:
+        return -1
+    else:
+        if angle < 90:
+            return 0
+        elif angle < 180:
+            return 1
+        elif angle < 270:
+            return 2
+        elif angle < 360:
+            return 3
+
+
+def check_guadrant(angle, point):
+    if angle == 0:
+        return [0, point[1]]
+    elif angle == 90:
+        return [point[1], 0]
+    elif angle == 180:
+        return [0, point[1] * -1]
+    elif angle == 270:
+        return [point[1] * -1, 0]
+
+
+def get_coord(data):
+    K = len(data)
+    angles = np.array([x/float(K)*(2*mt.pi) for x in range(K)])
+    non_zero_labels = data != 0
+
+    x = angles[non_zero_labels]
+    y = data[non_zero_labels]
+
+    point = np.array([[x[i], y[i]] for i, _ in enumerate(x)])
+    point = point.reshape(-1, 2)
+
+    for idx, pt in enumerate(point):
+        rad = pt[0]
+        ang = rad / mt.pi * 180
+
+        dis = pt[1]
+        quad = get_quadrant(ang)
+        if quad == -1:
+            point[idx] = check_guadrant(ang, pt)
+        else:
+            if (ang < 90) or \
+                    (ang > 180 and ang < 270):
+                ang = 90 - (ang % 90)
+            else:
+                ang = ang % 90
+            rad = ang * mt.pi / 180
+
+            quad = quadrant_check[quad]
+            x = dis * mt.cos(rad) * quad[0]  # get X
+            y = dis * mt.sin(rad) * quad[1]  # get Y
+
+            point[idx] = [x, y]
+
+    return point.sum(axis=0)
 
 
 class CoordGenerator:
@@ -10,55 +73,46 @@ class CoordGenerator:
         mongo_uri = "mongodb://localhost:27017"
         self.conn = mc(mongo_uri).TestMuLetter
         self.seed_zone = self.conn.SeedZone
+        self.mail = self.conn.mail
         self.mail_box = self.conn.MailBox
         self.cluster_zone = self.conn.ClusterZone
 
-        print("Coord Generator Init :)")
+    def all_remake_coords(self):
+        K = self.cluster_zone.find().sort("version", -1)[0]['K']
 
-    def make_new_cluster(self):
-        _seed_features = self.seed_zone.find({}, {
-            "_id": 0,
-            "label": 0
+        mail_boxes = self.mail_box.find()
+        for mail_box in mail_boxes:
+            self.make_coords(mail_box["_id"])
+
+    def make_coords(self, mail_box_id):
+        K = self.cluster_zone.find().sort("version", -1)[0]['K']
+
+        mail_box_id = ObjectId(mail_box_id) if type(
+            mail_box_id) == str else mail_box_id
+        mail_box = self.mail_box.find_one({
+            "_id": mail_box_id
         })
-        seed_features = pd.DataFrame([_ for _ in _seed_features])
-        self.seed_features = seed_features
 
-        norm_info, norm_features = make_norm(seed_features, get_norm_info=True)
-        self.norm_info = norm_info
-        self.norm_features = norm_features
-
-        kmeans = KMeans(
-            datas=norm_features
-        )
-        kmeans.run(early_stop_cnt=5,
-                   ecv_check_count=20)
-        kmeans.sorting_ver_2()
-        music_label = pd.DataFrame(norm_features['trackId'])
-        music_label['label'] = kmeans.clusters
-        self.music_label = music_label
-        self.kmeans = kmeans
-
-        _k_features = list()
-        for k_pat in kmeans.K_pattern:
-            _k_features.append(k_pat.tolist())
-
-        # Save Cluster Info
-        cluster_zone_doc = dict({
-            "version": self.cluster_zone.estimated_document_count() + 1,
-            "features": _k_features,
-            "ecv": kmeans.ecv,
-            "K": len(_k_features),
-            "createdAt": dt.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        })
-        self.cluster_zone.insert_one(cluster_zone_doc)
-
-        for _, label_info in music_label.iterrows():
-            track_id, label = label_info
-
-            self.seed_zone.update_one({
-                "track_id": track_id
-            }, {
-                "$set": {
-                    "label": label
-                }
+        tracks = mail_box['tracks']
+        label_cnt = np.zeros(K)
+        for track in tracks:
+            trackId = track['trackId']
+            res = self.seed_zone.find_one({
+                "trackId": trackId
             })
+            label = res['label']
+            label_cnt[label] += 1
+
+        label_per = (label_cnt / label_cnt.sum()
+                     * 100).round().astype("int")
+        x, y = get_coord(label_per).astype("float64")
+        self.mail_box.update_one({
+            "_id": mail_box_id,
+        }, {
+            "$set": {
+                "point": {
+                    "x": x,
+                    "y": y
+                }
+            }
+        })
