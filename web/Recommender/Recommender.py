@@ -15,7 +15,6 @@ class Recommender:
         self.coord_gen = CoordGenerator()
 
     def init_setting(self):
-        self.coord_gen.make_coords(self.mail_box_id)
         self.db.get_mailbox(_obj_id=self.mail_box_id)
 
         _sel_tracks = self.db.tracks
@@ -27,6 +26,7 @@ class Recommender:
         spotify.get_features()
 
         self.db.save_seed_zone(spotify.features)
+        self.coord_gen.make_coords(self.mail_box_id)
 
         spotify.get_reco_tracks
         spotify.get_features(target="reco")
