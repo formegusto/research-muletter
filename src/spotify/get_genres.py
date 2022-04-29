@@ -9,7 +9,6 @@ def get_genres(token, sel_tracks):
     artists_uri = "https://api.spotify.com/v1/artists"
 
     genres = list()
-
     artist_list = list()
     seed_genres = list()
 

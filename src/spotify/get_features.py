@@ -35,4 +35,4 @@ def get_features(token, sel_tracks):
         features = pd.concat([features, pd.DataFrame(
             result['audio_features'])[target_cols]], ignore_index=True)
 
-    return features
+    return features.rename({"id": "trackId"})

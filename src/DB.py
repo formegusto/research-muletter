@@ -27,6 +27,7 @@ class DB:
 
         mail_box = {
             "title": "Test",
+            "description": "Test",
             "tracks": _tracks
         }
 
